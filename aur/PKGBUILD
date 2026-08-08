@@ -9,7 +9,7 @@ license=('GPL-2.0')
 depends=()
 makedepends=('cargo')
 source=("$pkgname-$pkgver.tar.gz::https://github.com/Pommersche92/podfetch/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('296b523c0ceec8d351f2d3292f760a36ed18374b9516b68d5379e36783a8bdfd')
 
 prepare() {
   cd "$pkgname-$pkgver"
