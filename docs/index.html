@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PodFetch — CLI podcast downloader</title>
+    <meta name="description" content="PodFetch is a modern Rust CLI for discovering podcasts, resolving RSS feeds, and downloading episodes for your personal media library." />
+    <meta property="og:title" content="PodFetch — CLI podcast downloader" />
+    <meta property="og:description" content="Search, resolve, and download podcasts from the terminal with a polished Rust-based workflow." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://pommersche92.github.io/podfetch/" />
+    <meta property="og:image" content="https://pommersche92.github.io/podfetch/assets/podfetch-logo.png" />
+    <link rel="canonical" href="https://pommersche92.github.io/podfetch/" />
+    <link rel="stylesheet" href="assets/fonts/fonts.css" />
+    <link rel="stylesheet" href="site.css" />
+  </head>
+  <body>
+    <div class="background-glow"></div>
+
+    <nav>
+      <a href="#" class="nav-brand">
+        <img src="assets/podfetch-logo.png" alt="PodFetch" />
+        <span>PodFetch</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="#quickstart">Quick Start</a></li>
+        <li><a href="#imprint">Imprint</a></li>
+        <li><a href="https://github.com/Pommersche92/podfetch" target="_blank" rel="noopener">GitHub ↗</a></li>
+      </ul>
+    </nav>
+
+    <div id="dsgvo-banner" class="dsgvo-banner" hidden>
+      <div class="dsgvo-content">
+        <p>This site uses local browser storage to remember your consent for the privacy notice and to keep the experience simple. No personal data is collected or transmitted by this page.</p>
+        <button id="dsgvo-accept" class="btn btn-primary">Accept</button>
+      </div>
+    </div>
+
+    <main>
+      <section id="hero" class="hero">
+        <div class="hero-copy fade-in-up">
+          <p class="eyebrow">Rust CLI • Podcast Syncing</p>
+          <h1>Discover podcasts.<br />Download episodes.<br />Keep your library in sync.</h1>
+          <p class="hero-text">
+            PodFetch helps you find podcasts, resolve their RSS feeds, and download new episodes from the terminal with metadata and cover art baked in.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/Pommersche92/podfetch">View on GitHub</a>
+            <a class="btn btn-secondary" href="https://github.com/Pommersche92/podfetch/releases">Download binaries</a>
+          </div>
+          <div class="hero-badges">
+            <span class="badge">🦀 Rust</span>
+            <span class="badge">RSS + Search</span>
+            <span class="badge">Jellyfin / Audiobookshelf ready</span>
+            <span class="badge">Linux • Windows • Arch</span>
+          </div>
+        </div>
+        <div class="hero-card fade-in-up">
+          <img src="assets/podfetch-logo.png" alt="PodFetch logo" />
+          <div class="hero-card-body">
+            <h2>Fast, focused, and local-first</h2>
+            <p>Pull podcasts into a structured folder, tag the audio for your media stack, and skip already-downloaded episodes.</p>
+            <pre><code>podfetch "Darknet Diaries"
+podfetch https://example.com/podcast.xml</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" class="section">
+        <div class="section-header fade-in-up">
+          <p class="eyebrow">What PodFetch does</p>
+          <h2>One tool for discovery, download, and organization.</h2>
+          <p>Built around the real workflow of podcast fans who want something simple and dependable from the terminal.</p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="card fade-in-up">
+            <h3>🔎 Search by name</h3>
+            <p>Find a podcast quickly by title and let PodFetch resolve its feed automatically.</p>
+          </article>
+          <article class="card fade-in-up">
+            <h3>📡 RSS or direct input</h3>
+            <p>Use either a podcast name or a known RSS feed URL, depending on what you already have.</p>
+          </article>
+          <article class="card fade-in-up">
+            <h3>⬇️ Smart episode sync</h3>
+            <p>Only downloads episodes that have not already been recorded, keeping repeat runs lightweight.</p>
+          </article>
+          <article class="card fade-in-up">
+            <h3>🏷️ Audio metadata</h3>
+            <p>Tags downloaded files and writes metadata and cover images for media-server workflows.</p>
+          </article>
+          <article class="card fade-in-up">
+            <h3>📁 Flexible output paths</h3>
+            <p>Use templates like <code>{podcast_name}</code> and <code>{podcast_author}</code> to build your preferred folder layout.</p>
+          </article>
+          <article class="card fade-in-up">
+            <h3>⚡ Parallel downloads</h3>
+            <p>Increase throughput with configurable concurrency for a faster sync pass when you want it.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="install" class="section">
+        <div class="section-header fade-in-up">
+          <p class="eyebrow">Install it your way</p>
+          <h2>Pick the format that fits your setup.</h2>
+        </div>
+
+        <div class="install-grid">
+          <a class="install-card fade-in-up" href="https://crates.io/crates/podfetch" target="_blank" rel="noopener">
+            <img src="assets/crates-io.png" alt="crates.io" />
+            <div>
+              <h3>cargo install</h3>
+              <p>Install from crates.io on any Rust-enabled system.</p>
+              <code>cargo install podfetch</code>
+            </div>
+          </a>
+          <a class="install-card fade-in-up" href="https://aur.archlinux.org/" target="_blank" rel="noopener">
+            <img src="assets/archlinux.svg" alt="Arch Linux" />
+            <div>
+              <h3>AUR packages</h3>
+              <p>Install PodFetch on Arch Linux with package-manager support.</p>
+              <code>yay -S podfetch</code>
+            </div>
+          </a>
+          <a class="install-card fade-in-up" href="https://github.com/Pommersche92/podfetch/releases" target="_blank" rel="noopener">
+            <img src="assets/appimage.svg" alt="AppImage" />
+            <div>
+              <h3>AppImage</h3>
+              <p>Run a self-contained binary on Linux desktops without extra setup.</p>
+              <code>./podfetch-*.AppImage</code>
+            </div>
+          </a>
+          <a class="install-card fade-in-up" href="https://github.com/Pommersche92/podfetch/releases" target="_blank" rel="noopener">
+            <img src="assets/windows.svg" alt="Windows" />
+            <div>
+              <h3>Windows zip</h3>
+              <p>Use the cross-compiled Windows build from the release artifacts.</p>
+              <code>podfetch.exe</code>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <section id="quickstart" class="section">
+        <div class="section-header fade-in-up">
+          <p class="eyebrow">Quick start</p>
+          <h2>Try the core commands in a few seconds.</h2>
+        </div>
+
+        <div class="release-grid">
+          <article class="card fade-in-up">
+            <h3>🔎 Search by podcast name</h3>
+            <p>Use a podcast title to search and resolve the feed automatically.</p>
+            <pre><code>podfetch "Darknet Diaries"</code></pre>
+          </article>
+          <article class="card fade-in-up">
+            <h3>📡 Download from an RSS feed</h3>
+            <p>Point PodFetch at a feed URL when you already know the source.</p>
+            <pre><code>podfetch https://example.com/podcast.xml</code></pre>
+          </article>
+          <article class="card fade-in-up">
+            <h3>🧭 Force search mode</h3>
+            <p>Use <code>--search</code> when you want the input treated strictly as a search term.</p>
+            <pre><code>podfetch --search "The Joe Rogan Experience"</code></pre>
+          </article>
+          <article class="card fade-in-up">
+            <h3>📁 Override the output folder</h3>
+            <p>Use <code>-o</code> with placeholders like <code>{podcast_name}</code> or <code>{podcast_author}</code> to customize where files land.</p>
+            <pre><code>podfetch -o "~/Music/podcasts/{podcast_name}" "My Podcast"</code></pre>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Built with Rust for reliable podcast syncing from the command line.</p>
+      <details class="impressum">
+        <summary><span class="impressum-arrow">▶</span> Impressum (Angaben gemäß § 5 TMG)</summary>
+        <div class="impressum-body">
+        <div class="impressum-col">
+            <h4>Angaben gemäß § 5 TMG</h4>
+            <p>Raimo Geisel<br>Uhlandstraße 15<br>75385 Bad Teinach</p>
+        </div>
+        <div class="impressum-col">
+            <h4>Kontakt</h4>
+            <p>E-Mail: <a href="mailto:raimog92@protonmail.com">raimog92@protonmail.com</a></p>
+        </div>
+        <div class="impressum-col">
+            <h4>Streitschlichtung</h4>
+            <p>Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:
+            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener">https://ec.europa.eu/consumers/odr</a>.<br><br>
+            Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer
+            Verbraucherschlichtungsstelle teilzunehmen.</p>
+        </div>
+        </div>
+      </details>
+    </footer>
+
+    <script src="site.js"></script>
+  </body>
+</html>
