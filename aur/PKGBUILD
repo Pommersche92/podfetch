@@ -15,7 +15,7 @@ prepare() {
   cd "$pkgname-$pkgver"
   cargo fetch --locked
 }
-
+ 
 build() {
   cd "$pkgname-$pkgver"
   export RUSTUP_TOOLCHAIN=stable
