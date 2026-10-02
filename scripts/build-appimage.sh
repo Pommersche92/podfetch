@@ -85,8 +85,31 @@ DESKTOP
 
     local icon_src="${PROJECT_ROOT}/icon.png"
     if [ -f "$icon_src" ]; then
-        cp "$icon_src" "$appdir/usr/share/icons/hicolor/256x256/apps/${pkg}.png"
-        log_info "Using icon: icon.png"
+        local icon_dest="$appdir/usr/share/icons/hicolor/256x256/apps/${pkg}.png"
+        
+        # Check if icon needs resizing (must be exactly 256x256 for linuxdeploy)
+        if command -v identify &>/dev/null; then
+            local dimensions
+            dimensions=$(identify -format "%wx%h" "$icon_src" 2>/dev/null || echo "unknown")
+            
+            if [ "$dimensions" != "256x256" ]; then
+                log_info "Resizing icon from $dimensions to 256x256..."
+                if command -v magick &>/dev/null; then
+                    magick convert "$icon_src" -resize 256x256 -background none -gravity center -extent 256x256 "$icon_dest" 2>/dev/null
+                elif command -v convert &>/dev/null; then
+                    convert "$icon_src" -resize 256x256 -background none -gravity center -extent 256x256 "$icon_dest" 2>/dev/null
+                else
+                    cp "$icon_src" "$icon_dest"
+                    log_warning "ImageMagick not found; using icon as-is (may cause linuxdeploy errors)"
+                fi
+            else
+                cp "$icon_src" "$icon_dest"
+                log_info "Using icon: icon.png (256x256)"
+            fi
+        else
+            cp "$icon_src" "$icon_dest"
+            log_info "Using icon: icon.png"
+        fi
     else
         log_warning "icon.png not found; AppImage will lack an icon"
     fi
