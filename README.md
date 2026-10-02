@@ -11,6 +11,10 @@ PodFetch is a lightweight command-line podcast downloader written in Rust. It he
 - 🏷️ Tag downloaded audio files with title, artist, album, and embedded cover art
 - 🧾 Write metadata and cover images for media-library integration
 - 📁 Support configurable destination paths with placeholders for podcast name and author
+- 🎨 **Interactive TUI (Terminal User Interface)** with ratatui for a polished experience
+- 📋 **Interactive wizard** for podcast selection, search confirmation, and download configuration
+- 📊 **Real-time download progress UI** with scrollable active downloads and history
+- ⌨️ **Keyboard shortcuts** for navigation and control (Tab, ↑↓ arrows, Ctrl-Q)
 
 ## 📦 Installation
 
@@ -27,7 +31,7 @@ cargo build --release
 ./target/release/podfetch --help
 ```
 
-## � Release targets
+## 🚀 Release targets
 
 PodFetch now includes local release automation for several distribution formats:
 
@@ -59,9 +63,42 @@ cargo build --release
 
 A static landing page for GitHub Pages is available in [docs/index.html](docs/index.html). Publish the repository’s `docs/` folder as the Pages source to make it live.
 
-## �🚀 Quick Start
+## 🖥️ User Interface
 
-On first run, PodFetch will prompt you to choose a default download directory template.
+PodFetch features an interactive Terminal User Interface (TUI) built with [ratatui](https://ratatui.rs/).
+
+### Podcast Setup Wizard
+
+On first run (or when not providing full CLI arguments), you'll be guided through an interactive wizard with 5 steps:
+
+1. **Podcast Input** - Enter a podcast name or RSS feed URL
+2. **Search Confirmation** - Choose to search the database or treat input as a URL
+3. **Select Result** - Browse and select from search results (if searching)
+4. **Output Path** - Confirm the download directory
+5. **Review & Start** - Review settings and start the download
+
+**Keyboard shortcuts in the wizard:**
+- `Enter` - Move to next step / confirm selection
+- `↑↓` - Navigate through search results
+- `Y` / `N` / `B` - Quick keys for Yes (search) / No (URL) / Back
+- `Ctrl-Q` - Cancel and exit
+
+### Download Progress UI
+
+Once downloads begin, you'll see a real-time progress interface with three sections:
+
+1. **Current Downloads** - Shows active downloads with individual progress bars
+2. **Overall Progress Bar** - Visual representation of total download progress
+3. **History** - Scrollable list of completed (✅) and failed (❌) downloads
+
+**Keyboard shortcuts during downloads:**
+- `Tab` - Switch focus between active downloads and history areas
+- `↑↓` - Scroll the focused area (all downloads/history shown with scroll indicators)
+- `Ctrl-Q` - Cancel all downloads and exit
+
+## ⚡ Quick Start
+
+On first run, PodFetch will prompt you through an interactive wizard to choose your download settings.
 
 ### Example usage
 
@@ -90,19 +127,28 @@ podfetch [OPTIONS] [URL_OR_NAME]
 
 Options:
 
-- `-s, --search`: force the input to be treated as a search term
-- `-o, --output <PATH>`: override the download path template
+- `-s, --search`: force the input to be treated as a search term (skip wizard's search confirmation step)
+- `-o, --output <PATH>`: override the download path template (skips output path wizard step)
 - `-j, --jobs <N>`: set the maximum number of concurrent downloads (default: 5)
+
+**Note:** When all required arguments are provided (`URL_OR_NAME`, `-s`/URL decision, and optionally `-o` and `-j`), the wizard is skipped entirely and downloads begin immediately.
 
 ## ⚙️ How it works
 
-1. PodFetch loads or creates a configuration file on first launch.
-2. It accepts either:
+1. **Configuration** - PodFetch loads or creates a configuration file on first launch.
+2. **Interactive Setup (if needed)** - If not all required args are provided, launches an interactive wizard:
+   - Asks for podcast name or RSS URL
+   - Confirms search vs. URL treatment
+   - Shows search results for selection (if searching)
+   - Confirms output directory
+   - Shows final settings review
+3. **Input Resolution** - Accepts either:
    - a direct RSS feed URL, or
    - a podcast name, which is searched and resolved to an RSS feed
-3. It determines an output directory based on the configured template and the podcast metadata.
-4. It downloads only episodes that have not already been recorded in the archive file.
-5. Each downloaded file is tagged with metadata and cover art where possible.
+4. **Output Directory** - Determines the output directory based on the configured template and the podcast metadata.
+5. **Parallel Downloads** - Downloads only episodes that have not already been recorded in the archive file, with configurable concurrent download limit.
+6. **Metadata Tagging** - Each downloaded file is tagged with metadata and cover art where possible.
+7. **Progress Tracking** - Real-time TUI displays active downloads, overall progress, and completed/failed history.
 
 ## ⚙️ Configuration
 

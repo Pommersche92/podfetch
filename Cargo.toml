@@ -1,19 +1,19 @@
 [package]
 name = "podfetch"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Raimo Geisel"]
-description = "A lightweight CLI client for searching and downloading podcasts including metadata for self-hosting via audiobookshelf, jellyfin, etc."
+description = "A lightweight CLI/TUI client for searching and downloading podcasts including metadata for self-hosting via audiobookshelf, jellyfin, etc."
 license = "GPL-3.0"
 repository = "https://github.com/Pommersche92/podfetch"
 homepage = "https://pommersche92.github.io/podfetch/"
 documentation = "https://docs.rs/podfetch"
-keywords = ["cli", "downloader", "podcasts", "terminal"]
+keywords = ["cli", "tui", "downloader", "podcasts", "terminal"]
 categories = ["command-line-utilities", "asynchronous"]
 readme = "README.md"
 
 [dependencies]
-tokio = { version = "1.38", features = ["rt-multi-thread", "macros", "fs", "io-util"] }
+tokio = { version = "1.38", features = ["rt-multi-thread", "macros", "fs", "io-util", "sync"] }
 reqwest = { version = "0.12", features = ["json", "stream"] }
 futures-util = "0.3"
 lofty = "0.21" # Pure Rust audio tagging and art embedding
@@ -26,4 +26,7 @@ serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
 dirs = "5.0"
 anyhow = "1.0"
-indicatif = "0.17"
+ratatui = { version = "0.28", features = ["serde"] }
+crossterm = { version = "0.28", features = ["serde"] }
+parking_lot = "0.12"
+log = "0.4"

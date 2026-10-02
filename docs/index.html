@@ -100,6 +100,18 @@ podfetch https://example.com/podcast.xml</code></pre>
             <h3>⚡ Parallel downloads</h3>
             <p>Increase throughput with configurable concurrency for a faster sync pass when you want it.</p>
           </article>
+          <article class="card fade-in-up">
+            <h3>🎨 Interactive TUI</h3>
+            <p>Navigate podcasts and track downloads with a modern terminal interface built on ratatui.</p>
+          </article>
+          <article class="card fade-in-up">
+            <h3>📋 Setup wizard</h3>
+            <p>Interactive guided workflow for selecting podcasts and configuring download settings without CLI args.</p>
+          </article>
+          <article class="card fade-in-up">
+            <h3>📊 Live progress tracking</h3>
+            <p>Real-time download UI with scrollable active downloads, progress bar, and full history.</p>
+          </article>
         </div>
       </section>
 
@@ -107,6 +119,7 @@ podfetch https://example.com/podcast.xml</code></pre>
         <div class="section-header fade-in-up">
           <p class="eyebrow">Install it your way</p>
           <h2>Pick the format that fits your setup.</h2>
+          <p>Available on Linux, Windows, Arch, and macOS (via Rust/cargo).</p>
         </div>
 
         <div class="install-grid">
@@ -145,32 +158,62 @@ podfetch https://example.com/podcast.xml</code></pre>
         </div>
       </section>
 
-      <section id="quickstart" class="section">
+      <section id="ui" class="section">
         <div class="section-header fade-in-up">
-          <p class="eyebrow">Quick start</p>
-          <h2>Try the core commands in a few seconds.</h2>
+          <p class="eyebrow">Interactive experience</p>
+          <h2>A polished terminal interface for podcast discovery and downloads.</h2>
+          <p>PodFetch features an interactive Terminal User Interface (TUI) that guides you through setup and provides real-time download tracking.</p>
         </div>
 
         <div class="release-grid">
           <article class="card fade-in-up">
-            <h3>🔎 Search by podcast name</h3>
-            <p>Use a podcast title to search and resolve the feed automatically.</p>
+            <h3>🧙 5-step setup wizard</h3>
+            <p>On first run (without CLI args), you'll be guided through podcast input, search confirmation, result selection, output path, and final review.</p>
+            <p><strong>Keyboard:</strong> Enter, ↑↓ arrows, Y/N/B quick keys, Ctrl-Q to exit</p>
+          </article>
+          <article class="card fade-in-up">
+            <h3>📥 Download progress UI</h3>
+            <p>Real-time interface shows active downloads with individual progress bars, an overall progress bar, and a scrollable history of completed and failed downloads.</p>
+            <p><strong>Keyboard:</strong> Tab to switch focus, ↑↓ to scroll, Ctrl-Q to cancel</p>
+          </article>
+          <article class="card fade-in-up">
+            <h3>⌨️ Keyboard-driven</h3>
+            <p>Full keyboard navigation and shortcuts for efficient workflows without reaching for the mouse.</p>
+          </article>
+          <article class="card fade-in-up">
+            <h3>⚡ Skip the wizard</h3>
+            <p>Provide all required arguments (podcast name/URL, search flag, optional output path and job count) to skip the wizard and start downloading immediately.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="quickstart" class="section">
+        <div class="section-header fade-in-up">
+          <p class="eyebrow">Quick start</p>
+          <h2>Try the core commands in a few seconds.</h2>
+          <p>Start with just a podcast name, or provide full arguments to skip the wizard.</p>
+        </div>
+
+        <div class="release-grid">
+          <article class="card fade-in-up">
+            <h3>🎯 Interactive mode (default)</h3>
+            <p>Just provide a podcast name and let the wizard guide you through discovery, confirmation, and configuration.</p>
             <pre><code>podfetch "Darknet Diaries"</code></pre>
           </article>
           <article class="card fade-in-up">
-            <h3>📡 Download from an RSS feed</h3>
-            <p>Point PodFetch at a feed URL when you already know the source.</p>
+            <h3>📡 Known RSS feed</h3>
+            <p>Start with a direct feed URL to skip searching.</p>
             <pre><code>podfetch https://example.com/podcast.xml</code></pre>
           </article>
           <article class="card fade-in-up">
-            <h3>🧭 Force search mode</h3>
-            <p>Use <code>--search</code> when you want the input treated strictly as a search term.</p>
-            <pre><code>podfetch --search "The Joe Rogan Experience"</code></pre>
+            <h3>🚀 All arguments provided (skip wizard)</h3>
+            <p>Provide everything upfront and start downloading immediately without prompts.</p>
+            <pre><code>podfetch --search "The Joe Rogan Experience" -j 10</code></pre>
           </article>
           <article class="card fade-in-up">
-            <h3>📁 Override the output folder</h3>
-            <p>Use <code>-o</code> with placeholders like <code>{podcast_name}</code> or <code>{podcast_author}</code> to customize where files land.</p>
-            <pre><code>podfetch -o "~/Music/podcasts/{podcast_name}" "My Podcast"</code></pre>
+            <h3>📁 Custom output path</h3>
+            <p>Use <code>-o</code> with placeholders like <code>{podcast_name}</code> or <code>{podcast_author}</code> to customize folder structure.</p>
+            <pre><code>podfetch -o "~/Music/{podcast_name}" "My Podcast"</code></pre>
           </article>
         </div>
       </section>

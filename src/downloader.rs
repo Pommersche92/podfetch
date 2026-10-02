@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Result};
 use futures_util::StreamExt;
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use lofty::file::TaggedFileExt;
 use lofty::config::WriteOptions;
 use lofty::picture::{Picture, PictureType};
@@ -16,6 +15,7 @@ use std::sync::Arc;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::{Mutex, Semaphore};
+use crate::tui::download_ui::DownloadProgressRef;
 
 #[derive(Clone, Debug)]
 pub struct Episode {
@@ -173,6 +173,7 @@ pub async fn download_episodes(
     channel: &Channel,
     output_dir: &Path,
     max_concurrent: usize,
+    progress: DownloadProgressRef,
 ) -> Result<()> {
     let artwork_info = save_metadata_and_artwork(client, channel, output_dir).await?;
     let podcast_title = channel.title.clone();
@@ -216,24 +217,8 @@ pub async fn download_episodes(
     }
 
     if pending.is_empty() {
-        println!("🎉 All episodes are up to date!");
         return Ok(());
     }
-
-    println!(
-        "\n📥 Downloading {} new episode(s) natively (max {} parallel)...",
-        pending.len(),
-        max_concurrent
-    );
-
-    let multi = Arc::new(MultiProgress::new());
-    let main_pb = multi.add(ProgressBar::new(pending.len() as u64));
-    main_pb.set_style(
-        ProgressStyle::with_template(
-            "[{pos}/{len}] [{bar:30.cyan/blue}] {percent}% - Total Progress",
-        )?
-        .progress_chars("#>-"),
-    );
 
     let semaphore = Arc::new(Semaphore::new(max_concurrent));
     let archive_mutex = Arc::new(Mutex::new(archive_path));
@@ -243,10 +228,9 @@ pub async fn download_episodes(
 
     for ep in pending {
         let sem = Arc::clone(&semaphore);
-        let multi_clone = Arc::clone(&multi);
         let archive_mutex = Arc::clone(&archive_mutex);
         let artwork_info = Arc::clone(&artwork_info);
-        let main_pb = main_pb.clone();
+        let progress = Arc::clone(&progress);
         let client = client.clone();
         let output_dir = output_dir.to_path_buf();
         let p_title = podcast_title.clone();
@@ -255,20 +239,17 @@ pub async fn download_episodes(
         let task = tokio::spawn(async move {
             let _permit = sem.acquire().await.unwrap();
 
-            let pb = multi_clone.add(ProgressBar::new(100));
-            pb.set_style(
-                ProgressStyle::with_template(" [{bar:20.green/white}] {percent:>3}% | {msg}")
-                    .unwrap()
-                    .progress_chars("#>-"),
-            );
-
-            let truncated_title = if ep.title.len() > 30 {
-                format!("{}...", &ep.title[..27])
+            let truncated_title = if ep.title.len() > 50 {
+                format!("{}...", &ep.title[..47])
             } else {
                 ep.title.clone()
             };
 
-            pb.set_message(truncated_title.clone());
+            // Register this download in the progress tracker
+            {
+                let mut prog = progress.lock().await;
+                prog.start_download(ep.index, truncated_title.clone());
+            }
 
             // Determine extension from URL (defaults to mp3)
             let ext = if ep.url.contains(".m4a") {
@@ -287,9 +268,7 @@ pub async fn download_episodes(
             // Stream HTTP download directly via reqwest
             match client.get(&ep.url).send().await {
                 Ok(response) => {
-                    if let Some(content_length) = response.content_length() {
-                        pb.set_length(content_length);
-                    }
+                    let total_size = response.content_length().unwrap_or(0);
 
                     if let Ok(mut file) = File::create(&file_path).await {
                         let mut stream = response.bytes_stream();
@@ -303,7 +282,10 @@ pub async fn download_episodes(
                                     break;
                                 }
                                 downloaded += chunk.len() as u64;
-                                pb.set_position(downloaded);
+
+                                // Update progress display for this specific download
+                                let mut prog = progress.lock().await;
+                                prog.update_download(ep.index, downloaded, total_size);
                             } else {
                                 success = false;
                                 break;
@@ -323,7 +305,8 @@ pub async fn download_episodes(
                                 &artwork_info,
                             );
 
-                            pb.finish_with_message(format!("DONE: {}", truncated_title));
+                            let mut prog = progress.lock().await;
+                            prog.mark_completed(ep.index, truncated_title.clone());
 
                             let lock = archive_mutex.lock().await;
                             if let Ok(mut archive_file) =
@@ -332,16 +315,16 @@ pub async fn download_episodes(
                                 let _ = writeln!(archive_file, "{}", ep.id);
                             }
                         } else {
-                            pb.abandon_with_message(format!("FAILED: {}", truncated_title));
+                            let mut prog = progress.lock().await;
+                            prog.mark_failed(ep.index, truncated_title.clone());
                         }
                     }
                 }
                 Err(_) => {
-                    pb.abandon_with_message(format!("FAILED: {}", truncated_title));
+                    let mut prog = progress.lock().await;
+                    prog.mark_failed(ep.index, truncated_title.clone());
                 }
             }
-
-            main_pb.inc(1);
         });
 
         tasks.push(task);
@@ -351,6 +334,5 @@ pub async fn download_episodes(
         let _ = task.await;
     }
 
-    main_pb.finish_with_message("Sync complete!");
     Ok(())
 }

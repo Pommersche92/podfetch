@@ -1,13 +1,16 @@
 mod config;
 mod downloader;
 mod search;
+mod tui;
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use config::Config;
-use dialoguer::{theme::ColorfulTheme, Input, Select};
 use reqwest::Client;
 use rss::Channel;
+use tui::{setup_terminal, restore_terminal, run_wizard, run_download_ui};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 #[derive(Parser, Debug)]
 #[command(name = "podfetch")]
@@ -32,56 +35,66 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // 1. FIRST ACTION: Load config or prompt user on first run
+    // 1. Load config or prompt user on first run
     let config = Config::load_or_init()?;
-
     let args = Args::parse();
-    let client = Client::builder().build()?;
 
-    // 2. Resolve input: Use CLI argument or prompt the user if omitted
-    let input = match args.input {
-        Some(val) if !val.trim().is_empty() => val.trim().to_string(),
-        _ => Input::<String>::new()
-            .with_prompt("Enter podcast name or RSS feed URL")
-            .interact_text()?,
+    // 2. Setup TUI
+    let mut terminal = setup_terminal()?;
+
+    // Provide wizard config if all CLI args are present
+    let wizard_config = if args.input.is_some() {
+        Some((
+            args.input.clone().unwrap(),
+            args.search,
+            args.output.clone(),
+            args.jobs,
+        ))
+    } else {
+        None
     };
 
-    // 3. Resolve Podcast Search or Direct URL
-    let (target_rss_url, channel) = if !args.search && is_url(&input) {
-        println!("🔗 Fetching RSS metadata from: {}", input);
+    let wizard_result = run_wizard(&mut terminal, wizard_config).await?;
+    
+    let client = Client::builder().build()?;
 
-        let bytes = client.get(&input).send().await?.bytes().await?;
+    // 3. Resolve Podcast Search or Direct URL
+    let (_target_rss_url, channel) = if !wizard_result.force_search && is_url(&wizard_result.input) {
+        terminal.draw(|f| {
+            f.render_widget(
+                ratatui::widgets::Paragraph::new("🔗 Fetching RSS metadata...")
+                    .style(ratatui::prelude::Style::default().fg(ratatui::prelude::Color::Cyan)),
+                f.area(),
+            );
+        })?;
+
+        let bytes = client.get(&wizard_result.input).send().await?.bytes().await?;
         let channel = Channel::read_from(&bytes[..])?;
 
-        (input, channel)
+        (wizard_result.input, channel)
     } else {
-        println!("🔍 Searching PodcastAddict for: \"{}\"...", input);
-        let search_results = search::search_podcasts(&client, &input).await?;
+        terminal.draw(|f| {
+            f.render_widget(
+                ratatui::widgets::Paragraph::new("🔍 Searching PodcastAddict...")
+                    .style(ratatui::prelude::Style::default().fg(ratatui::prelude::Color::Cyan)),
+                f.area(),
+            );
+        })?;
+
+        let search_results = search::search_podcasts(&client, &wizard_result.input).await?;
 
         if search_results.is_empty() {
-            return Err(anyhow!("No podcasts found matching query: '{}'", input));
+            restore_terminal()?;
+            return Err(anyhow!("No podcasts found matching query: '{}'", wizard_result.input));
         }
 
         let selected = if search_results.len() == 1 {
-            println!("✅ Match found: \"{}\" by {}", search_results[0].title, search_results[0].author);
             search_results[0].clone()
         } else {
-            let items: Vec<String> = search_results
-                .iter()
-                .map(|r| format!("{} (by {})", r.title, r.author))
-                .collect();
-
-            println!("\nMultiple podcasts found. Select one to proceed:");
-            let selection = Select::with_theme(&ColorfulTheme::default())
-                .with_prompt("Choose a podcast")
-                .default(0)
-                .items(&items)
-                .interact()?;
-
-            search_results[selection].clone()
+            // Use first result for now (wizard handles multi-selection in UI version)
+            search_results[0].clone()
         };
 
-        println!("📡 Resolving RSS feed for \"{}\"...", selected.title);
         let rss_url = search::resolve_rss_url(&client, &selected).await?;
 
         let bytes = client.get(&rss_url).send().await?.bytes().await?;
@@ -98,17 +111,38 @@ async fn main() -> Result<()> {
         .to_string();
 
     // 4. Resolve target directory using placeholders
-    let output_dir = config.resolve_path(args.output.as_deref(), &podcast_name, &podcast_author);
+    let output_dir = config.resolve_path(
+        wizard_result.output_override.as_deref(),
+        &podcast_name,
+        &podcast_author,
+    );
 
-    println!("\n============================================================");
-    println!("Podcast:     {}", podcast_name);
-    println!("Author:      {}", podcast_author);
-    println!("RSS URL:     {}", target_rss_url);
-    println!("Output Dir:  {}", output_dir.display());
-    println!("============================================================\n");
+    // 5. Create progress tracker for download UI
+    let progress = Arc::new(Mutex::new(
+        tui::download_ui::DownloadProgress::new(channel.items().len()),
+    ));
 
-    // 5. Execute parallel downloading
-    downloader::download_episodes(&client, &channel, &output_dir, args.jobs).await?;
+    // 6. Run downloads with TUI
+    let progress_clone = Arc::clone(&progress);
+    let download_task = tokio::spawn(async move {
+        downloader::download_episodes(
+            &client,
+            &channel,
+            &output_dir,
+            wizard_result.max_jobs,
+            progress_clone,
+        )
+        .await
+    });
+
+    // 7. Display download UI
+    run_download_ui(&mut terminal, progress).await?;
+
+    // Wait for download to complete
+    download_task.await??;
+
+    restore_terminal()?;
+    println!("✅ Sync complete!");
 
     Ok(())
 }
