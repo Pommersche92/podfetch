@@ -172,10 +172,20 @@ prepare_icon() {
         return 1
     fi
     
-    # Try to convert with ImageMagick
+    # Try to convert with ImageMagick (v7+ preferred, falls back to legacy convert)
+    log_info "Converting icon.png to icon.ico..."
+    
+    if command -v magick &>/dev/null; then
+        # ImageMagick v7+ (uses 'magick convert' syntax, avoids deprecation warning)
+        if magick convert "$icon_png" -define "icon:auto-resize=256,128,64,32,16" "$icon_ico" 2>/dev/null; then
+            log_success "Created icon.ico (ImageMagick v7+)"
+            return 0
+        fi
+    fi
+    
     if command -v convert &>/dev/null; then
-        log_info "Converting icon.png to icon.ico..."
-        if convert "$icon_png" -define "icon:auto-resize=256,128,64,32,16" "$icon_ico"; then
+        # Fall back to legacy ImageMagick (may show deprecation warning in v7+, but still works)
+        if convert "$icon_png" -define "icon:auto-resize=256,128,64,32,16" "$icon_ico" 2>/dev/null; then
             log_success "Created icon.ico"
             return 0
         else
@@ -184,7 +194,7 @@ prepare_icon() {
         fi
     fi
     
-    log_warning "ImageMagick 'convert' not found — cannot create icon.ico"
+    log_warning "ImageMagick not found — cannot create icon.ico"
     log_warning "Install with: sudo apt-get install imagemagick"
     return 1
 }

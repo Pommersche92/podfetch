@@ -93,8 +93,8 @@ DESKTOP
 
     cat > "$appdir/AppRun" <<APPRUN
 #!/bin/sh
-HERE="$(dirname "$(readlink -f "$0")")"
-exec "${HERE}/usr/bin/${pkg}" "$@"
+HERE="\$(dirname "\$(readlink -f "\$0")")"
+exec "\${HERE}/usr/bin/${pkg}" "\$@"
 APPRUN
     chmod +x "$appdir/AppRun"
 

@@ -1,6 +1,6 @@
 [package]
 name = "podfetch"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["Raimo Geisel"]
 description = "A lightweight CLI/TUI client for searching and downloading podcasts including metadata for self-hosting via audiobookshelf, jellyfin, etc."
