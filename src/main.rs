@@ -2,6 +2,7 @@ mod config;
 mod downloader;
 mod search;
 mod tui;
+mod linux_desktop;
 
 use anyhow::{anyhow, Result};
 use clap::Parser;
@@ -36,7 +37,16 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<()> {
     // 1. Load config or prompt user on first run
-    let config = Config::load_or_init()?;
+    let (config, is_first_run) = Config::load_or_init()?;
+    
+    // Install desktop integration on first run (Linux only)
+    if is_first_run {
+        if let Err(e) = linux_desktop::install_desktop_integration() {
+            eprintln!("Warning: Failed to install desktop integration: {}", e);
+            // Don't fail the entire application for this
+        }
+    }
+    
     let args = Args::parse();
 
     // 2. Setup TUI

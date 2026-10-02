@@ -23,6 +23,7 @@ DIST_DIR="${PROJECT_ROOT}/target/dist"
 DRAFT_MODE=false
 SKIP_BUILD=false
 SKIP_APPIMAGE=false
+SKIP_WINDOWS=false
 RELEASE_NOTES=""
 
 while [[ $# -gt 0 ]]; do
@@ -39,6 +40,10 @@ while [[ $# -gt 0 ]]; do
             SKIP_APPIMAGE=true
             shift
             ;;
+        --skip-windows)
+            SKIP_WINDOWS=true
+            shift
+            ;;
         --notes)
             RELEASE_NOTES="$2"
             shift 2
@@ -52,8 +57,15 @@ while [[ $# -gt 0 ]]; do
             echo "  --draft              Create the release as a draft"
             echo "  --skip-build         Skip the cargo build step"
             echo "  --skip-appimage      Skip AppImage build"
+            echo "  --skip-windows       Skip Windows cross-compilation"
             echo "  --notes TEXT         Release notes text"
             echo "  -h, --help           Show this help"
+            echo ""
+            echo "Requirements:"
+            echo "  - gh (GitHub CLI)    https://cli.github.com/"
+            echo "  - For AppImage: linuxdeploy (auto-downloaded)"
+            echo "  - For Windows: x86_64-w64-mingw32-gcc (MinGW)"
+            echo "    Install on Debian/Ubuntu: sudo apt-get install mingw-w64"
             exit 0
             ;;
         *)
@@ -142,6 +154,104 @@ build_appimage() {
     fi
 }
 
+prepare_icon() {
+    log_step "Preparing Windows icon..."
+    
+    local icon_ico="$PROJECT_ROOT/icon.ico"
+    local icon_png="$PROJECT_ROOT/icon.png"
+    
+    # Check if icon.ico already exists
+    if [ -f "$icon_ico" ]; then
+        log_info "Using existing icon.ico"
+        return 0
+    fi
+    
+    # Check if icon.png exists
+    if [ ! -f "$icon_png" ]; then
+        log_warning "Neither icon.ico nor icon.png found — Windows exe will have no icon"
+        return 1
+    fi
+    
+    # Try to convert with ImageMagick
+    if command -v convert &>/dev/null; then
+        log_info "Converting icon.png to icon.ico..."
+        if convert "$icon_png" -define "icon:auto-resize=256,128,64,32,16" "$icon_ico"; then
+            log_success "Created icon.ico"
+            return 0
+        else
+            log_warning "ImageMagick conversion failed"
+            return 1
+        fi
+    fi
+    
+    log_warning "ImageMagick 'convert' not found — cannot create icon.ico"
+    log_warning "Install with: sudo apt-get install imagemagick"
+    return 1
+}
+
+build_windows() {
+    log_step "Cross-compiling Windows binary..."
+    cd "$PROJECT_ROOT"
+    
+    # Prepare Windows icon
+    prepare_icon
+    
+    # Check if Windows target is installed
+    if ! rustup target list | grep -q "x86_64-pc-windows-gnu (installed)"; then
+        log_info "Installing Windows target for Rust..."
+        rustup target add x86_64-pc-windows-gnu || return 1
+    fi
+    
+    # Check if mingw is available
+    if ! command -v x86_64-w64-mingw32-gcc &>/dev/null; then
+        log_warning "MinGW toolchain (x86_64-w64-mingw32-gcc) not found"
+        log_warning "Windows build requires: sudo apt-get install mingw-w64"
+        return 1
+    fi
+    
+    export RUSTUP_TOOLCHAIN=stable
+    
+    local build_output
+    build_output=$(cargo build --release --target x86_64-pc-windows-gnu 2>&1)
+    local build_status=$?
+    
+    if [ $build_status -ne 0 ]; then
+        log_warning "Windows cross-compilation failed — asset will be skipped"
+        echo "$build_output" | head -20  # Show first 20 lines of error
+        return 1
+    fi
+    
+    log_success "Windows binary built"
+}
+
+create_windows_zip() {
+    local archive_basename="${PACKAGE_NAME}-${VERSION}-x86_64-windows.zip"
+    local zip_file="${DIST_DIR}/${archive_basename}"
+    
+    log_step "Creating Windows zip: ${archive_basename}"
+    
+    if ! command -v zip &>/dev/null; then
+        log_warning "zip command not found — skipping Windows zip creation"
+        return 1
+    fi
+    
+    local staging
+    staging=$(mktemp -d)
+    local staging_dir="${staging}/${PACKAGE_NAME}-${VERSION}-x86_64"
+    mkdir -p "$staging_dir"
+    
+    cp "target/x86_64-pc-windows-gnu/release/${PACKAGE_NAME}.exe" "$staging_dir/"
+    [ -f LICENSE ] && cp LICENSE "$staging_dir/"
+    [ -f README.md ] && cp README.md "$staging_dir/"
+    
+    cd "$staging"
+    zip -r "$zip_file" "${PACKAGE_NAME}-${VERSION}-x86_64" > /dev/null
+    cd "$PROJECT_ROOT"
+    rm -rf "$staging"
+    
+    log_success "Created: ${archive_basename} ($(du -sh "$zip_file" | cut -f1))"
+}
+
 create_github_release() {
     local tag="v$VERSION"
     local title="🚀 PodFetch v${VERSION}"
@@ -154,7 +264,8 @@ create_github_release() {
     local f
     for f in \
         "${DIST_DIR}/${PACKAGE_NAME}-${VERSION}-x86_64.tar.gz" \
-        "${DIST_DIR}/${PACKAGE_NAME}-${VERSION}-x86_64.AppImage"; do
+        "${DIST_DIR}/${PACKAGE_NAME}-${VERSION}-x86_64.AppImage" \
+        "${DIST_DIR}/${PACKAGE_NAME}-${VERSION}-x86_64-windows.zip"; do
         if [ -f "$f" ]; then
             assets+=("$f")
             log_info "  + $(basename "$f")"
@@ -203,6 +314,16 @@ main() {
     if [ "$SKIP_APPIMAGE" = false ]; then
         build_appimage
         echo ""
+    fi
+
+    if [ "$SKIP_WINDOWS" = false ]; then
+        if build_windows; then
+            create_windows_zip
+            echo ""
+        else
+            log_warning "Windows build skipped"
+            echo ""
+        fi
     fi
 
     create_tarball

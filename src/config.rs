@@ -12,7 +12,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn load_or_init() -> Result<Self> {
+    pub fn load_or_init() -> Result<(Self, bool)> {
         // ~/.local/share/podfetch/config.toml
         let local_share = dirs::data_local_dir().context("Could not locate local share directory")?;
         let config_dir = local_share.join("podfetch");
@@ -24,7 +24,7 @@ impl Config {
                 .context("Failed to read existing config file")?;
             let config: Config = toml::from_str(&content)
                 .context("Failed to parse config.toml")?;
-            return Ok(config);
+            return Ok((config, false)); // Not first run
         }
 
         // 2. FIRST RUN PROMPT - Very first action
@@ -62,7 +62,7 @@ impl Config {
 
         println!("\nSaved configuration to: {}\n", config_file.display());
 
-        Ok(config)
+        Ok((config, true)) // First run
     }
 
     /// Dynamically expands placeholders ({podcast_name}, {podcast_author}, ~) into a real path
